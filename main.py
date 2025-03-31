@@ -2,53 +2,63 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from Cube import wireCube
+from cube import wire_cube
+import math
 
-pygame.init()
 
-# Configurações da tela
-screen_width = 1000
-screen_height = 800
-background_color = (0.5, 0.6, 0.3, 1)
-drawing_color = (0, 0, 0, 0)
+def main():
+    pygame.init()
+    # project settings
+    screen_width = 800
+    screen_height = 600
+    screen = pygame.display.set_mode((800, 600), DOUBLEBUF | OPENGL)
+    glClearColor(0.4600, 0.6895, 0.5502, 1)
+    pygame.display.set_caption("Cubo com Transformações: Translação, Escala e Espelhamento")
 
-screen = pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
-pygame.display.set_caption('OpenGL - Transformações Fixas')
+    gluPerspective(45, (800 / 600), 0.1, 50.0)
+    glTranslatef(0, 0, -10)
 
-def initialise():
-    glClearColor(*background_color)
-    glColor(*drawing_color)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(60, (screen_width / screen_height), 0.1, 100.0)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    glEnable(GL_DEPTH_TEST)
+    clock = pygame.time.Clock()
+    start_ticks = pygame.time.get_ticks()
+    move_x = -4.0
+    move_direction = 1
 
-def display():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()
-    
-    # Aplicando transformações fixas:
+    done = False
+    while not done:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                done = True
 
-    # 1. Translação:
-    glTranslatef(0.5, 0.5, -10)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    # 2. Espelhamento
-    glScalef(-1, 1, 1)
+        # Tempo para a escala pulsante
+        t = (pygame.time.get_ticks() - start_ticks) / 1300.0
+        pulsate = 1.0 + 0.5 * math.sin(t * math.pi * 2)
+        angle = t * 50
 
-    # 3. Escala
-    glScalef(2.5, 2.5, 2.5)
-    
-    wireCube()
+        # Cubo 1: Translação 
+        glPushMatrix()
+        move_x += 0.02 * move_direction
+        if move_x > -1 or move_x < -4:
+            move_direction *= -1
+        glTranslatef(move_x, 0, 0)
+        glRotatef(angle, 1, 1, 0)
+        wire_cube()
+        glPopMatrix()
 
-initialise()
-done = False
-while not done:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            done = True
-    display()
-    pygame.display.flip()
-    pygame.time.wait(100)
-pygame.quit()
+        # Cubo 2: Escala pulsante com espelhamento
+        glPushMatrix()
+        glTranslatef(4, 0, 0)
+        glScalef(-pulsate, pulsate, pulsate)  # Espelhamento no eixo X
+        glRotatef(angle, 1, 1, 0)
+        wire_cube()
+        glPopMatrix()
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
